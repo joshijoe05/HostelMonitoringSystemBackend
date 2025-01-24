@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
+const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -97,7 +98,7 @@ const changeAccountPassword = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Unauthorized request");
     }
 
-    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    const isPasswordCorrect = await user.checkPassword(oldPassword);
     if (!isPasswordCorrect) {
         throw new ApiError(400, "Incorrect password");
     }

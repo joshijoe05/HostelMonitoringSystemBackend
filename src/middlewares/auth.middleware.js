@@ -1,9 +1,10 @@
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const User = require("../models/user.model");
+const jwt = require("jsonwebtoken");
 
 const verifyUser = asyncHandler(async (req, res, next) => {
-    const token = req.cookies?.accessToken || req.header("Authorization").split(" ")[1];
+    const token = req.cookies?.accessToken || req.header("Authorization")?.split(" ")[1];
 
     if (!token) {
         throw new ApiError(401, "Not authorized");

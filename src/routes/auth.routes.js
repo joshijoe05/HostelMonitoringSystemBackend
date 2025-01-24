@@ -10,7 +10,7 @@ router.route("/login").post(authController.loginUser);
 router.route("/get-access-token").post(authController.getAccessTokenFromRefreshToken);
 
 // protected routes
-router.route("/logout").get(verifyUser, authController.logoutUser);
-router.route("/change-password").post(authController.changeAccountPassword);
+router.route("/logout").post(verifyUser, authController.logoutUser);
+router.route("/change-password").post(verifyUser, authController.changeAccountPassword);
 
 module.exports = router;
