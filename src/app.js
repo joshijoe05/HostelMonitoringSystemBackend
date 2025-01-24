@@ -1,6 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const authRouter = require("./routes/auth.routes");
 
 const app = express();
 
@@ -32,5 +33,8 @@ app.get("/", async (req, res) => {
     res.send("Server is live !");
 });
 
+
+// routes
+app.use("/api/v1/auth", authRouter);
 
 module.exports = { app };
