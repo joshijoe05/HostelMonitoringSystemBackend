@@ -7,6 +7,7 @@ const router = express.Router();
 // router.route("/register").post();
 
 router.route("/login").post(authController.loginUser);
+router.route("/get-access-token").post(authController.getAccessTokenFromRefreshToken);
 
 // protected routes
 router.route("/logout").get(verifyUser, authController.logoutUser);
