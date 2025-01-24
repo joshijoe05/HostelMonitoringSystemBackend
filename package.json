@@ -1,0 +1,11 @@
+{
+  "name": "hostel-monitoring-system",
+  "version": "1.0.0",
+  "description": "a hostel monitoring system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Joshi",
+  "license": "ISC"
+}
