@@ -40,7 +40,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
     const isValidUser = await user.checkPassword(password);
 
     if (!isValidUser) {
-        throw new ApiError(404, "Invalid credentials");
+        throw new ApiError(400, "Invalid credentials");
     }
 
     const { refreshToken, accessToken } = await generateAccessAndRefreshTokens(user._id);
