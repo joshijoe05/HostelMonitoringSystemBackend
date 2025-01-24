@@ -10,5 +10,6 @@ router.route("/login").post(authController.loginUser);
 
 // protected routes
 router.route("/logout").get(verifyUser, authController.logoutUser);
+router.route("/change-password").post(authController.changeAccountPassword);
 
 module.exports = router;
