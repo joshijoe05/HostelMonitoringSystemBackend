@@ -1,9 +1,14 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const path = require("path");
 const authRouter = require("./routes/auth.routes");
 
 const app = express();
+
+// template engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "src/views"));
 
 // cross origin
 app.use(cors({
