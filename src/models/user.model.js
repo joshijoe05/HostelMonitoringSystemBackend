@@ -27,10 +27,29 @@ const userSchema = new mongoose.Schema(
             enum: ["student", "caretaker", "admin"],
             default: "student"
         },
-        // hostelId: {
-        //     type: mongoose.Schema.ObjectId,
-        //     ref: "Hostel",
-        // },
+        hostelId: {
+            type: mongoose.Schema.ObjectId,
+            ref: "Hostel",
+        },
+        contactNumber: {
+            type: String,
+            required: [true, "contact number is required"],
+            trim: true
+        },
+        address: {
+            city: {
+                type: String,
+                trim: true
+            },
+            state: {
+                type: String,
+                trim: true
+            },
+            zipCode: {
+                type: String,
+                trim: true
+            }
+        },
         createdBy: {
             type: mongoose.Schema.ObjectId,
             ref: "User",
@@ -83,19 +102,4 @@ userSchema.methods.generateRefreshToken = function () {
     )
 }
 
-module.exports = mongoose.model("User", userSchema);
-
-/*
-Unconfirmed fields
-"contactNumber": "1234567890",
-"address": {
-    "city": "CityName",
-    "state": "StateName",
-    "zipCode": "123456"
-},
-"emergencyContact": {
-    "name": "Jane Doe",     
-    "phone": "0987654321",  
-    "relation": "Parent"     
-},                         
-*/
+module.exports = mongoose.model("User", userSchema);                         
