@@ -33,6 +33,7 @@ const userSchema = new mongoose.Schema(
         },
         hostelId: {
             type: mongoose.Schema.ObjectId,
+            required: [true, "hostel id is required"],
             ref: "Hostel",
         },
         contactNumber: {
@@ -110,8 +111,5 @@ userSchema.methods.generateRefreshToken = function () {
     )
 }
 
-userSchema.methods.generateVerificationToken = async function () {
-    return await bcrypt.hash(this._id.toString(), 10);
-}
 
 module.exports = mongoose.model("User", userSchema);                         

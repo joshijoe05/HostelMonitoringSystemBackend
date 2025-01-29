@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
 const User = require("../models/user.model");
 const Joi = require("joi");
 const sendMail = require("../services/mailer.service");
@@ -20,6 +21,10 @@ const generateAccessAndRefreshTokens = async (userId) => {
     catch (error) {
         throw new ApiError(500, "Something went wrong while generating tokens");
     }
+}
+
+const generateVerificationToken = async function (email) {
+    return await bcrypt.hash(email, 10);
 }
 
 
@@ -45,7 +50,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
         throw new ApiError(409, "User with email already exists");
     }
 
-    const verificationToken = await user.generateVerificationToken();
+    const verificationToken = await generateVerificationToken(email);
     const user = await User.create({
         email,
         fullName,
@@ -69,7 +74,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 });
 
 const verifyUser = asyncHandler(async (req, res) => {
-    const token = req.path.id;
+    const { token } = req.query;
     if (!token) {
         return res.render("verificationError", { message: "Invalid verification link" });
     }
