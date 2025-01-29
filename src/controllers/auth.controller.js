@@ -3,6 +3,9 @@ const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
+const Joi = require("joi");
+const sendMail = require("../services/mailer.service");
+const { verificationTemplate } = require("../utils/mailTemplate");
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -19,12 +22,51 @@ const generateAccessAndRefreshTokens = async (userId) => {
     }
 }
 
-// registering user - not yet confirmed
-/*
-const registerUser = asyncHandler(async (req, res, next) => {
 
+// address not included yet
+const registerUser = asyncHandler(async (req, res, next) => {
+    const { fullName, email, password, hostelId, contactNumber } = req.body;
+
+    if ([hostelId, fullName, email, password, contactNumber].some((field) => !field || field?.trim() === "")) {
+        throw new ApiError(400, "All Fields are required");
+    }
+
+    const emailValidation = Joi.object({
+        email: Joi.string().pattern(/^n\d{6}@rguktn\.ac\.in$/).required()
+    });
+    const { error } = emailValidation.validate({ email });
+    if (error) {
+        throw new ApiError(400, "Invalid Email Address");
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+        throw new ApiError(409, "User with email already exists");
+    }
+
+    const verificationToken = await user.generateVerificationToken();
+    const user = await User.create({
+        email,
+        fullName,
+        password,
+        hostelId,
+        contactNumber,
+        verificationToken,
+    });
+
+    const createdUser = await User.findById(user._id).select("-password -refreshToken");
+
+    if (!createdUser) {
+        throw new ApiError(500, "Something went wrong while registering user");
+    }
+
+    await sendMail(user.email, "Account Verification", verificationTemplate(user.fullName, verificationToken));
+
+    return res.status(201).json(
+        new ApiResponse(201, "Verification mail sent", createdUser)
+    );
 });
-*/
 
 const loginUser = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
@@ -42,6 +84,11 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
     if (!isValidUser) {
         throw new ApiError(400, "Invalid credentials");
+    }
+
+    const isUserVerified = user.isVerified;
+    if (!isUserVerified) {
+        throw new ApiError(400, "User is not verified");
     }
 
     const { refreshToken, accessToken } = await generateAccessAndRefreshTokens(user._id);
@@ -159,4 +206,4 @@ const getAccessTokenFromRefreshToken = asyncHandler(async (req, res) => {
         );
 });
 
-module.exports = { loginUser, logoutUser, changeAccountPassword, getAccessTokenFromRefreshToken };
+module.exports = { registerUser, loginUser, logoutUser, changeAccountPassword, getAccessTokenFromRefreshToken };

@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema(
             enum: ["student", "caretaker", "admin"],
             default: "student"
         },
+        isVerified: {
+            type: Boolean,
+            default: false
+        },
         hostelId: {
             type: mongoose.Schema.ObjectId,
             ref: "Hostel",
@@ -57,6 +61,10 @@ const userSchema = new mongoose.Schema(
         refreshToken: {
             type: String
         },
+        verificationToken: {
+            type: String,
+            default: null
+        }
     },
     {
         timestamps: true
@@ -100,6 +108,10 @@ userSchema.methods.generateRefreshToken = function () {
             expiresIn: process.env.REFRESH_TOKEN_EXPIRY
         }
     )
+}
+
+userSchema.methods.generateVerificationToken = async function () {
+    return await bcrypt.hash(this._id.toString(), 10);
 }
 
 module.exports = mongoose.model("User", userSchema);                         
