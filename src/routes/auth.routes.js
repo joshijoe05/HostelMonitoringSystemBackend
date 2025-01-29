@@ -5,7 +5,7 @@ const verifyUser = require("../middlewares/auth.middleware");
 const router = express.Router();
 
 router.route("/register").post(authController.registerUser);
-router.route("/verify").get(authController.verifyUser);
+router.route("/verify/:id").get(authController.verifyUser);
 router.route("/login").post(authController.loginUser);
 router.route("/get-access-token").post(authController.getAccessTokenFromRefreshToken);
 

@@ -69,15 +69,15 @@ const registerUser = asyncHandler(async (req, res, next) => {
 });
 
 const verifyUser = asyncHandler(async (req, res) => {
-    const { token } = req.query;
+    const token = req.path.id;
     if (!token) {
-        return res.render("verificationiError", { message: "Invalid verification link" });
+        return res.render("verificationError", { message: "Invalid verification link" });
     }
 
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-        return res.render("verificationiError", { message: "User not found or token expired" });
+        return res.render("verificationError", { message: "User not found or token expired" });
     }
 
     user.isVerified = true;
