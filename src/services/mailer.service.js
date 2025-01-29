@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const ApiError = require('../src/utils/apiError');
+const ApiError = require('../utils/apiError');
 
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
