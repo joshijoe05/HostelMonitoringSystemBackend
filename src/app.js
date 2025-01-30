@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const path = require("path");
 const authRouter = require("./routes/auth.routes");
+const hostelRouter = require("./routes/hostel.routes");
 
 const app = express();
 
@@ -41,5 +42,6 @@ app.get("/", async (req, res) => {
 
 // routes
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/hostel", hostelRouter);
 
 module.exports = { app };
