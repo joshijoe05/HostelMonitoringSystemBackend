@@ -1,10 +1,10 @@
 const express = require("express");
-const Hostel = require("../models/hostel.model");
+const verifyAdmin = require("../middlewares/admin.middleware");
 const hostelController = require("../controllers/hostel.controller");
 
 const router = express.Router();
 
-router.route("/create").post(hostelController.createHostel);
+router.route("/create").post(verifyAdmin, hostelController.createHostel);
 
 
 module.exports = router;
