@@ -5,23 +5,22 @@ const Joi = require("joi");
 const Hostel = require("../models/hostel.model");
 
 const createHostel = asyncHandler(async (req, res) => {
-    const { name, wings, totalRooms, createdBy } = req.body;
-    if ([name, wings, totalRooms, createdBy].some((field) => !field || field?.trim() === "")) {
+    const { name, wings, totalRooms } = req.body;
+    if ([name, wings, totalRooms].some((field) => !field)) {
         throw new ApiError(400, "All Fields are required");
     }
 
     const hostelSchema = Joi.object({
         name: Joi.string().min(3).max(100).required(),
         totalRooms: Joi.number().integer().min(1).required(),
-        wings: Joi.array().items(Joi.string().max(1)).required(),
-        createdBy: Joi.string().uuid().required()
+        wings: Joi.array().items(Joi.string().min(1)).required(),
     });
 
-    const { error } = hostelSchema.validate({ name, wings, totalRooms, createdBy });
+    const { error } = hostelSchema.validate({ name, wings, totalRooms });
     if (error) {
         throw new ApiError(400, error.message);
     }
-
+    const createdBy = req.user._id;
     const hostel = await Hostel.create({ name, wings, totalRooms, createdBy });
     if (!hostel) {
         throw new ApiError(500, "Hostel could not be created");
@@ -50,8 +49,8 @@ const updateHostelById = asyncHandler(async (req, res) => {
         totalRooms: Joi.number().integer().min(1),
         wings: Joi.array().items(Joi.string().trim()),
         waterTimings: Joi.object({
-            start: Joi.string().regex(/^([0-9]{2}):([0-9]{2})\s?(AM|PM)$/),
-            end: Joi.string().regex(/^([0-9]{2}):([0-9]{2})\s?(AM|PM)$/)
+            start: Joi.string().regex(/^([0-9]{1,2}):([0-9]{2})\s?(AM|PM)$/),
+            end: Joi.string().regex(/^([0-9]{1,2}):([0-9]{2})\s?(AM|PM)$/)
         })
     }).min(1);
 
