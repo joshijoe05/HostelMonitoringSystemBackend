@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require("path");
 const authRouter = require("./routes/auth.routes");
 const hostelRouter = require("./routes/hostel.routes");
+const caretakerRouter = require("./routes/caretaker.routes");
 
 const app = express();
 
@@ -43,5 +44,6 @@ app.get("/", async (req, res) => {
 // routes
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/hostel", hostelRouter);
+app.use("/api/v1/caretaker", caretakerRouter);
 
 module.exports = { app };
