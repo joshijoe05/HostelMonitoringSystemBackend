@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const User = require("../models/user.model");
-const Hostel = require("../models/hostel.model");
+const Joi = require("joi");
 
 
 const createCaretaker = asyncHandler(async (req, res) => {
@@ -11,13 +11,33 @@ const createCaretaker = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All Fields are required");
     }
 
+    const caretakerSchema = Joi.object({
+        fullName: Joi.string().trim().min(3).max(100),
+        email: Joi.string().email().required(),
+        hostelId: Joi.string().required(),
+        contactNumber: Joi.string().trim().min(10).max(10)
+    });
+
+    const { error } = caretakerSchema.validate({ fullName, email, hostelId, contactNumber });
+    if (error) {
+        throw new ApiError(400, error.message);
+    }
+
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+        throw new ApiError(409, "User with email already exists");
+    }
+
     const createdBy = req.user._id;
     const role = "caretaker";
-    const caretaker = await User.create({ fullName, email, password, role, hostelId, contactNumber, createdBy });
+    await User.create({ fullName, email, password, role, hostelId, contactNumber, createdBy });
 
+    const caretaker = await User.findById(caretaker._id).select("-password -refreshToken");
     if (!caretaker) {
         throw new ApiError(500, "Caretaker not created");
     }
+
 
     return res.status(201).json(new ApiResponse(201, "Caretaker created Successfully", { caretaker }));
 });
@@ -37,7 +57,7 @@ const updateCaretakerById = asyncHandler(async (req, res) => {
 
     const updateCaretakerSchema = Joi.object({
         fullName: Joi.string().trim().min(3).max(100),
-        hostelId: Joi.string().uuid(),
+        hostelId: Joi.string().regex(/^[0-9a-fA-F]{24}$/),
         contactNumber: Joi.string().trim().min(10).max(10)
     }).min(1);
 
@@ -46,7 +66,7 @@ const updateCaretakerById = asyncHandler(async (req, res) => {
         throw new ApiError(400, error.message);
     }
 
-    const updatedCaretaker = await User.findByIdAndUpdate(caretakerId, { $set: data }, {
+    const updatedCaretaker = await User.findByIdAndUpdate(caretakerId, { $set: { fullName, hostelId, contactNumber } }, {
         new: true, runValidators: true
     },);
 
@@ -61,13 +81,13 @@ const updateCaretakerById = asyncHandler(async (req, res) => {
 const deleteCaretakerById = asyncHandler(async (req, res) => {
     const caretakerId = req.params.id;
 
-    const deletedCaretaker = await Hostel.findByIdAndDelete(hostelId);
+    const deletedCaretaker = await User.findByIdAndDelete(caretakerId);
 
     if (!deletedCaretaker) {
         throw new ApiError(404, "Caretaker not found");
     }
 
-    return res.status(200).json(new ApiResponse(200, "Hostel deleted Successfully", deletedCaretaker));
+    return res.status(200).json(new ApiResponse(200, "Caretaker deleted Successfully", deletedCaretaker));
 });
 
 

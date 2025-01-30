@@ -45,7 +45,6 @@ const updateHostelById = asyncHandler(async (req, res) => {
 
     const updateHostelSchema = Joi.object({
         name: Joi.string().trim().min(3).max(100),
-        caretakerIds: Joi.array().items(Joi.string().uuid()),
         totalRooms: Joi.number().integer().min(1),
         wings: Joi.array().items(Joi.string().trim()),
         waterTimings: Joi.object({
