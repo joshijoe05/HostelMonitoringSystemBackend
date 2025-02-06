@@ -36,4 +36,38 @@ const complaintSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-module.exports = mongoose.model("Complaint", complaintSchema);
+const complaintModel = mongoose.model("Complaint", complaintSchema);
+
+const complaintValidator = Joi.object({
+    description: Joi.string()
+        .trim()
+        .min(10)
+        .max(500)
+        .required()
+        .messages({
+            "string.empty": "Description cannot be empty",
+            "string.min": "Description must be at least 10 characters long",
+            "string.max": "Description cannot exceed 500 characters",
+            "any.required": "Description is required",
+        }),
+
+    type: Joi.string()
+        .valid("electricity", "cleaning", "others")
+        .required()
+        .messages({
+            "any.only": "Type must be one of ['electricity', 'cleaning', 'others']",
+            "any.required": "Type is required",
+        }),
+
+    priority: Joi.string()
+        .valid("low", "medium", "high")
+        .default("low")
+        .messages({
+            "any.only": "Priority must be one of ['low', 'medium', 'high']",
+        }),
+});
+
+
+module.exports = {
+    complaintModel, complaintValidator
+}
