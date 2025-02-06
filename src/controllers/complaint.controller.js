@@ -73,9 +73,34 @@ const deleteComplaint = asyncHandler(async (req, res, next) => {
     return new ApiResponse(200, "Issue deleted successfully !", deletedComplaint);
 });
 
+const updateComplaintStatus = asyncHandler(async (req, res, next) => {
+    const complaintId = req.params.id;
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) {
+        return new ApiError(404, "Issue not found !");
+    }
+
+    const { status } = req.body;
+    if (["pending", "in-progress", "resolved"].indexOf(status) === -1) {
+        return new ApiError(400, "Invalid status !");
+    }
+
+    const updatedComplaint = await Complaint.findByIdAndUpdate(complaintId, { $set: { status } }, { new: true });
+
+    if (!updatedComplaint) {
+        return new ApiError(500, "Issue could not be updated !");
+    }
+
+    return new ApiResponse(200, "Issue status updated successfully !", updatedComplaint);
+
+});
+
+
+
 
 module.exports = {
     createComplaint,
     updateComplaint,
-    deleteComplaint
+    deleteComplaint,
+    updateComplaintStatus,
 }
