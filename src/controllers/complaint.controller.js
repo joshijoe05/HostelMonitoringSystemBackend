@@ -7,9 +7,11 @@ const { Complaint, complaintValidator } = require("../models/complaint.model");
 
 const createComplaint = asyncHandler(async (req, res, next) => {
     const { description, type, priority } = req.body;
+
     const { error } = complaintValidator.validate({ description, type, priority });
+
     if (error) {
-        return new ApiError(400, error.message);
+        throw new ApiError(400, error.message);
     }
 
     const complaint = await Complaint.create({
@@ -20,7 +22,7 @@ const createComplaint = asyncHandler(async (req, res, next) => {
         priority
     });
 
-    return new ApiResponse(201, "Issue raised successfully !", complaint);
+    return res.status(201).json(new ApiResponse(201, "Issue raised successfully !", complaint));
 });
 
 
@@ -28,10 +30,10 @@ const updateComplaint = asyncHandler(async (req, res, next) => {
     const complaintId = req.params.id;
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-        return new ApiError(404, "Issue not found !");
+        throw new ApiError(404, "Issue not found !");
     }
     if (complaint.raised_by.toString() !== req.user._id.toString()) {
-        return new ApiError(403, "You are not authorized to update this issue !");
+        throw new ApiError(403, "You are not authorized to update this issue !");
     }
 
     const { description, type, priority } = req.body;
@@ -43,14 +45,14 @@ const updateComplaint = asyncHandler(async (req, res, next) => {
 
     const { error } = validator.validate({ description, type, priority });
     if (error) {
-        return new ApiError(400, error.message);
+        throw new ApiError(400, error.message);
     }
 
     const updatedComplaint = await Complaint.findByIdAndUpdate(complaintId, { $set: { description, type, priority } }, { new: true, runValidators: true });
     if (!updatedComplaint) {
-        return new ApiError(500, "Issue could not be updated !");
+        throw new ApiError(500, "Issue could not be updated !");
     }
-    return new ApiResponse(200, "Issue updated successfully !", updatedComplaint);
+    return res.status(200).json(new ApiResponse(200, "Issue updated successfully !", updatedComplaint));
 
 });
 
@@ -59,39 +61,39 @@ const deleteComplaint = asyncHandler(async (req, res, next) => {
     const complaintId = req.params.id;
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-        return new ApiError(404, "Issue not found !");
+        throw new ApiError(404, "Issue not found !");
     }
     if (complaint.raised_by.toString() !== req.user._id.toString()) {
-        return new ApiError(403, "You are not authorized to update this issue !");
+        throw new ApiError(403, "You are not authorized to update this issue !");
     }
 
     const deletedComplaint = await Complaint.findByIdAndDelete(complaintId);
     if (!deletedComplaint) {
-        return new ApiError(500, "Issue could not be deleted !");
+        throw new ApiError(500, "Issue could not be deleted !");
     }
 
-    return new ApiResponse(200, "Issue deleted successfully !", deletedComplaint);
+    return res.status(200).json(new ApiResponse(200, "Issue deleted successfully !", deletedComplaint));
 });
 
 const updateComplaintStatus = asyncHandler(async (req, res, next) => {
     const complaintId = req.params.id;
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-        return new ApiError(404, "Issue not found !");
+        throw new ApiError(404, "Issue not found !");
     }
 
     const { status } = req.body;
     if (["pending", "in-progress", "resolved"].indexOf(status) === -1) {
-        return new ApiError(400, "Invalid status !");
+        throw new ApiError(400, "Invalid status !");
     }
 
     const updatedComplaint = await Complaint.findByIdAndUpdate(complaintId, { $set: { status } }, { new: true });
 
     if (!updatedComplaint) {
-        return new ApiError(500, "Issue could not be updated !");
+        throw new ApiError(500, "Issue could not be updated !");
     }
 
-    return new ApiResponse(200, "Issue status updated successfully !", updatedComplaint);
+    return res.status(200).json(new ApiResponse(200, "Issue status updated successfully !", updatedComplaint));
 
 });
 

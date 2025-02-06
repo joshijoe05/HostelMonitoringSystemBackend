@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Joi = require("joi");
 
 const complaintSchema = new mongoose.Schema(
     {
@@ -36,7 +37,7 @@ const complaintSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-const complaintModel = mongoose.model("Complaint", complaintSchema);
+const Complaint = mongoose.model("Complaint", complaintSchema);
 
 const complaintValidator = Joi.object({
     description: Joi.string()
@@ -69,5 +70,5 @@ const complaintValidator = Joi.object({
 
 
 module.exports = {
-    complaintModel, complaintValidator
+    Complaint, complaintValidator
 }
