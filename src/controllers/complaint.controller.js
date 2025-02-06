@@ -95,7 +95,70 @@ const updateComplaintStatus = asyncHandler(async (req, res, next) => {
 
 });
 
+const getRaisedComplaints = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
 
+    const { page = 1, limit = 10, sortBy = "createdAt", order = "desc", type, status, priority } = req.query;
+
+    const filters = { raised_by: userId };
+
+    if (type) filters.type = type;
+    if (status) filters.status = status;
+    if (priority) filters.priority = priority;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const complaints = await Complaint.find(filters)
+        .sort({ [sortBy]: order === "asc" ? 1 : -1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+
+    const totalComplaints = await Complaint.countDocuments(filters);
+
+    res.status(200).json(new ApiResponse(200, "Complaints fetched successfully", {
+        complaints,
+        meta: {
+            total: totalComplaints,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(totalComplaints / limitNumber),
+        },
+    }));
+});
+
+
+const getIssuesInHostel = asyncHandler(async (req, res) => {
+    const hostelId = req.user.hostelId;
+
+    const { page = 1, limit = 10, sortBy = "createdAt", order = "desc", type, status, priority } = req.query;
+
+    const filters = { hostel_id: hostelId };
+
+    if (type) filters.type = type;
+    if (status) filters.status = status;
+    if (priority) filters.priority = priority;
+
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const complaints = await Complaint.find(filters)
+        .sort({ [sortBy]: order === "asc" ? 1 : -1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+
+    const totalComplaints = await Complaint.countDocuments(filters);
+
+    res.status(200).json(new ApiResponse(200, "Complaints fetched successfully", {
+        complaints,
+        meta: {
+            total: totalComplaints,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(totalComplaints / limitNumber),
+        },
+    }));
+});
 
 
 module.exports = {
@@ -103,4 +166,6 @@ module.exports = {
     updateComplaint,
     deleteComplaint,
     updateComplaintStatus,
+    getRaisedComplaints,
+    getIssuesInHostel,
 }
