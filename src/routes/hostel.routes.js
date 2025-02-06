@@ -1,5 +1,5 @@
 const express = require("express");
-const authorizeUserRoles = require("../middlewares/admin.middleware");
+const authorizeUserRoles = require("../middlewares/userRole.middleware");
 const hostelController = require("../controllers/hostel.controller");
 
 const router = express.Router();

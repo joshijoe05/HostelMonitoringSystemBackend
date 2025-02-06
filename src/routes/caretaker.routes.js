@@ -1,6 +1,6 @@
 const express = require("express");
 const careTakerController = require("../controllers/caretaker.controller");
-const authorizeUserRoles = require("../middlewares/admin.middleware");
+const authorizeUserRoles = require("../middlewares/userRole.middleware");
 
 const router = express.Router();
 
