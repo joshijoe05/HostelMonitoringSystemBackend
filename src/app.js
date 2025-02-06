@@ -5,6 +5,7 @@ const path = require("path");
 const authRouter = require("./routes/auth.routes");
 const hostelRouter = require("./routes/hostel.routes");
 const caretakerRouter = require("./routes/caretaker.routes");
+const complaintRouter = require("./routes/complaint.routes");
 
 const app = express();
 
@@ -45,5 +46,6 @@ app.get("/", async (req, res) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/hostel", hostelRouter);
 app.use("/api/v1/caretaker", caretakerRouter);
+app.use("/api/v1/complaints", complaintRouter);
 
 module.exports = { app };
