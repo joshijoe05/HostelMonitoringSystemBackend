@@ -221,11 +221,11 @@ const getAccessTokenFromRefreshToken = asyncHandler(async (req, res) => {
         .cookie("accessToken", accessToken, options)
         .json(
             new ApiResponse(200,
+                "Access token generated successfully",
                 {
                     accessToken,
                     refreshToken
                 },
-                "Access token generated successfully"
             )
         );
 });
