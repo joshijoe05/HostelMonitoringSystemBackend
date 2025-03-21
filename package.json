@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "a hostel monitoring system",
   "main": "index.js",
+  "engines": {
+    "node": "16.x"
+  },
   "scripts": {
     "dev": "nodemon src/index.js"
   },
