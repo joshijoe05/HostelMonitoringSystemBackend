@@ -33,6 +33,11 @@ const complaintSchema = new mongoose.Schema(
             enum: ["low", "medium", "high"],
             default: "low",
         },
+        images: [
+            {
+                type: String,
+            },
+        ]
     },
     { timestamps: true }
 );

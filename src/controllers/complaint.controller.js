@@ -3,6 +3,7 @@ const ApiResponse = require("../utils/apiResponse");
 const ApiError = require("../utils/apiError");
 const Joi = require("joi");
 const { Complaint, complaintValidator } = require("../models/complaint.model");
+const uploadOnCloudinary = require("../utils/cloudinary");
 
 
 const createComplaint = asyncHandler(async (req, res, next) => {
@@ -14,12 +15,25 @@ const createComplaint = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, error.message);
     }
 
+
+    const images = req.files.images;
+    if (images.length > 2) {
+        throw new ApiError(400, "You can upload a maximum of 2 images");
+    }
+    const imagePaths = [];
+    for (const file of images) {
+        const image = await uploadOnCloudinary(file.path);
+        imagePaths.push(image.url);
+    }
+
+
     const complaint = await Complaint.create({
         hostel_id: req.user.hostelId,
         raised_by: req.user._id,
         description,
         type,
-        priority
+        priority,
+        images: imagePaths,
     });
 
     return res.status(201).json(new ApiResponse(201, "Issue raised successfully !", complaint));
