@@ -5,15 +5,15 @@ const Joi = require("joi");
 const Hostel = require("../models/hostel.model");
 
 const createHostel = asyncHandler(async (req, res) => {
-    const { name, wings, totalRooms } = req.body;
-    if ([name, wings, totalRooms].some((field) => !field)) {
+    const { name, totalRooms } = req.body;
+    if ([name, totalRooms].some((field) => !field)) {
         throw new ApiError(400, "All Fields are required");
     }
 
     const hostelSchema = Joi.object({
         name: Joi.string().min(3).max(100).required(),
         totalRooms: Joi.number().integer().min(1).required(),
-        wings: Joi.array().items(Joi.string().min(1)).required(),
+        // wings: Joi.array().items(Joi.string().min(1)).required(),
     });
 
     const { error } = hostelSchema.validate({ name, wings, totalRooms });
@@ -30,13 +30,44 @@ const createHostel = asyncHandler(async (req, res) => {
 });
 
 const getAllHostels = asyncHandler(async (req, res) => {
-    const hostels = await Hostel.find();
+    const hostels = await Hostel.aggregate([
+        {
+            $lookup: {
+                from: "users",
+                localField: "caretakerIds",
+                foreignField: "_id",
+                as: "caretakers",
+            },
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "createdBy",
+                foreignField: "_id",
+                as: "creator",
+            },
+        },
+        {
+            $project: {
+                name: 1,
+                wings: 1,
+                totalRooms: 1,
+                waterTimings: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                caretakers: "$caretakers.fullName",
+                createdBy: { $arrayElemAt: ["$creator.fullName", 0] },
+            },
+        },
+    ]);
+
     if (!hostels) {
         throw new ApiError(500, "Hostels could not be fetched");
     }
 
     return res.status(200).json(new ApiResponse(200, "Hostels fetched Successfully", { hostels }));
 });
+
 
 
 const updateHostelById = asyncHandler(async (req, res) => {
