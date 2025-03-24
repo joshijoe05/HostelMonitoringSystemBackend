@@ -21,7 +21,7 @@ const createComplaint = asyncHandler(async (req, res, next) => {
     if (images && images.length > 2) {
         throw new ApiError(400, "You can upload a maximum of 2 images");
     }
-    if (!images) {
+    if (images) {
         const imagePaths = [];
         for (const file of images) {
             const image = await uploadOnCloudinary(file.path);
