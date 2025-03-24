@@ -18,7 +18,7 @@ const createComplaint = asyncHandler(async (req, res, next) => {
 
 
     const images = req.files.images;
-    if (images.length > 2) {
+    if (images && images.length > 2) {
         throw new ApiError(400, "You can upload a maximum of 2 images");
     }
     const imagePaths = [];
