@@ -17,5 +17,6 @@ router.route("/update-status/:id").put(authorizeUserRoles("caretaker"), complain
 router.route("/").get(authorizeUserRoles("student"), complaintController.getRaisedComplaints);
 router.route("/hostel").get(authorizeUserRoles("caretaker", "admin"), complaintController.getIssuesInHostel);
 router.route("/comment/:id").post(verifyUser, complaintController.addCommentInIssue);
+router.route("/:id").get(verifyUser, complaintController.getComplaintDetails);
 
 module.exports = router;

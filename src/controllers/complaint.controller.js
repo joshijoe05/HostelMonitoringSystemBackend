@@ -261,6 +261,120 @@ const getIssuesInHostel = asyncHandler(async (req, res) => {
 });
 
 
+const getComplaintDetails = asyncHandler(async (req, res) => {
+    const complaintId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(complaintId)) {
+        throw new ApiError(400, "Invalid complaint ID");
+    }
+
+    const complaintDetails = await Complaint.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(complaintId) } },
+
+        {
+            $lookup: {
+                from: "hostels",
+                localField: "hostel_id",
+                foreignField: "_id",
+                as: "hostel",
+            },
+        },
+
+        {
+            $lookup: {
+                from: "users",
+                localField: "raised_by",
+                foreignField: "_id",
+                as: "user",
+            },
+        },
+
+        {
+            $lookup: {
+                from: "complaintcomments",
+                localField: "_id",
+                foreignField: "complaint_id",
+                as: "comments",
+            },
+        },
+
+        {
+            $unwind: {
+                path: "$comments",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+
+        {
+            $lookup: {
+                from: "users",
+                localField: "comments.added_by",
+                foreignField: "_id",
+                as: "commentUser",
+            },
+        },
+
+        {
+            $project: {
+                type: 1,
+                status: 1,
+                priority: 1,
+                description: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                images: 1,
+                hostel: { $arrayElemAt: ["$hostel.name", 0] },
+                raised_by: { $arrayElemAt: ["$user.fullName", 0] },
+                comments: {
+                    _id: "$comments._id",
+                    text: "$comments.comment",
+                    createdAt: "$comments.createdAt",
+                    added_by: {
+                        $arrayElemAt: ["$commentUser.fullName", 0],
+                    },
+                },
+            },
+        },
+
+        {
+            $group: {
+                _id: "$_id",
+                type: { $first: "$type" },
+                status: { $first: "$status" },
+                priority: { $first: "$priority" },
+                description: { $first: "$description" },
+                createdAt: { $first: "$createdAt" },
+                updatedAt: { $first: "$updatedAt" },
+                images: { $first: "$images" },
+                hostel: { $first: "$hostel" },
+                raised_by: { $first: "$raised_by" },
+                comments: {
+                    $push: {
+                        $cond: {
+                            if: { $gt: ["$comments._id", null] }, // Only push non-null comments
+                            then: {
+                                _id: "$comments._id",
+                                text: "$comments.text",
+                                createdAt: "$comments.createdAt",
+                                added_by: "$comments.added_by",
+                            },
+                            else: "$$REMOVE", // Removes empty objects
+                        },
+                    },
+                },
+            },
+        },
+    ]);
+
+    if (!complaintDetails.length) {
+        throw new ApiError(404, "Complaint not found");
+    }
+
+    res.status(200).json(new ApiResponse(200, "Complaint details fetched successfully", complaintDetails[0]));
+});
+
+
+
 
 const addCommentInIssue = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -270,12 +384,14 @@ const addCommentInIssue = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Message is required");
     }
 
-    // Find the issue created by the logged-in student
-    const issue = await Complaint.findOne({ _id: id, raised_by: req.user._id });
+    if (req.user.role === "student") {
+        const issue = await Complaint.findOne({ _id: id, raised_by: req.user._id });
 
-    if (!issue) {
-        throw new ApiError(403, "You are not authorized to comment on this issue");
+        if (!issue) {
+            throw new ApiError(403, "You are not authorized to comment on this issue");
+        }
     }
+
 
     const comment = await Comment.create({
         complaint_id: id,
@@ -296,4 +412,5 @@ module.exports = {
     getRaisedComplaints,
     getIssuesInHostel,
     addCommentInIssue,
+    getComplaintDetails,
 }
