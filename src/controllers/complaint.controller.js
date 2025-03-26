@@ -5,6 +5,7 @@ const Joi = require("joi");
 const { Complaint, complaintValidator } = require("../models/complaint.model");
 const uploadOnCloudinary = require("../utils/cloudinary");
 const mongoose = require("mongoose");
+const Comment = require("../models/comment.model");
 
 
 const createComplaint = asyncHandler(async (req, res, next) => {
@@ -151,25 +152,6 @@ const getRaisedComplaints = asyncHandler(async (req, res) => {
         },
 
         {
-            $lookup: {
-                from: "comments",
-                localField: "_id",
-                foreignField: "complaint_id",
-                as: "comments",
-            },
-        },
-
-        { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } },
-        {
-            $lookup: {
-                from: "users",
-                localField: "comments.added_by",
-                foreignField: "_id",
-                as: "commentUser",
-            },
-        },
-
-        {
             $project: {
                 type: 1,
                 status: 1,
@@ -180,28 +162,6 @@ const getRaisedComplaints = asyncHandler(async (req, res) => {
                 images: 1,
                 hostel: { $arrayElemAt: ["$hostel.name", 0] },
                 raised_by: { $arrayElemAt: ["$user.fullName", 0] },
-                comments: {
-                    _id: "$comments._id",
-                    text: "$comments.comment",
-                    createdAt: "$comments.createdAt",
-                    added_by: { $arrayElemAt: ["$commentUser.fullName", 0] }, // Replace UID with name
-                },
-            },
-        },
-
-        {
-            $group: {
-                _id: "$_id",
-                type: { $first: "$type" },
-                status: { $first: "$status" },
-                priority: { $first: "$priority" },
-                description: { $first: "$description" },
-                createdAt: { $first: "$createdAt" },
-                updatedAt: { $first: "$updatedAt" },
-                images: { $first: "$images" },
-                hostel: { $first: "$hostel" },
-                raised_by: { $first: "$raised_by" },
-                comments: { $push: "$comments" },
             },
         },
 
@@ -235,7 +195,6 @@ const getIssuesInHostel = asyncHandler(async (req, res) => {
         }
         hostelId = new mongoose.Types.ObjectId(hostelId);
     }
-    console.log(hostelId);
 
     const { page = 1, limit = 10, sortBy = "createdAt", order = "desc", type, status, priority } = req.query;
 
@@ -274,25 +233,6 @@ const getIssuesInHostel = asyncHandler(async (req, res) => {
         },
 
         {
-            $lookup: {
-                from: "comments",
-                localField: "_id",
-                foreignField: "complaint_id",
-                as: "comments",
-            },
-        },
-
-        { $unwind: { path: "$comments", preserveNullAndEmptyArrays: true } },
-        {
-            $lookup: {
-                from: "users",
-                localField: "comments.added_by",
-                foreignField: "_id",
-                as: "commentUser",
-            },
-        },
-
-        {
             $project: {
                 type: 1,
                 status: 1,
@@ -303,28 +243,6 @@ const getIssuesInHostel = asyncHandler(async (req, res) => {
                 images: 1,
                 hostel: { $arrayElemAt: ["$hostel.name", 0] },
                 raised_by: { $arrayElemAt: ["$user.fullName", 0] },
-                comments: {
-                    _id: "$comments._id",
-                    text: "$comments.comment",
-                    createdAt: "$comments.createdAt",
-                    added_by: { $arrayElemAt: ["$commentUser.fullName", 0] }, // Replace UID with name
-                },
-            },
-        },
-
-        {
-            $group: {
-                _id: "$_id",
-                type: { $first: "$type" },
-                status: { $first: "$status" },
-                priority: { $first: "$priority" },
-                description: { $first: "$description" },
-                createdAt: { $first: "$createdAt" },
-                updatedAt: { $first: "$updatedAt" },
-                images: { $first: "$images" },
-                hostel: { $first: "$hostel" },
-                raised_by: { $first: "$raised_by" },
-                comments: { $push: "$comments" },
             },
         },
     ]);
@@ -343,6 +261,33 @@ const getIssuesInHostel = asyncHandler(async (req, res) => {
 });
 
 
+
+const addCommentInIssue = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    if (!message) {
+        throw new ApiError(400, "Message is required");
+    }
+
+    // Find the issue created by the logged-in student
+    const issue = await Complaint.findOne({ _id: id, raised_by: req.user._id });
+
+    if (!issue) {
+        throw new ApiError(403, "You are not authorized to comment on this issue");
+    }
+
+    const comment = await Comment.create({
+        complaint_id: id,
+        added_by: req.user._id,
+        comment: message,
+    });
+
+    return res.status(201).json(new ApiResponse(201, "Comment added successfully", comment));
+});
+
+
+
 module.exports = {
     createComplaint,
     updateComplaint,
@@ -350,4 +295,5 @@ module.exports = {
     updateComplaintStatus,
     getRaisedComplaints,
     getIssuesInHostel,
+    addCommentInIssue,
 }
