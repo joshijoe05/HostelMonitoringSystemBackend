@@ -21,7 +21,7 @@ const createHostel = asyncHandler(async (req, res) => {
         throw new ApiError(400, error.message);
     }
     const createdBy = req.user._id;
-    const hostel = await Hostel.create({ name, wings, totalRooms, createdBy });
+    const hostel = await Hostel.create({ name, totalRooms, createdBy });
     if (!hostel) {
         throw new ApiError(500, "Hostel could not be created");
     }
