@@ -354,7 +354,7 @@ const getComplaintDetails = asyncHandler(async (req, res) => {
                             if: { $gt: ["$comments._id", null] }, // Only push non-null comments
                             then: {
                                 _id: "$comments._id",
-                                text: "$comments.text",
+                                comment: "$comments.text",
                                 createdAt: "$comments.createdAt",
                                 added_by: "$comments.added_by",
                             },
