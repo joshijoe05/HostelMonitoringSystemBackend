@@ -16,7 +16,7 @@ const createHostel = asyncHandler(async (req, res) => {
         // wings: Joi.array().items(Joi.string().min(1)).required(),
     });
 
-    const { error } = hostelSchema.validate({ name, wings, totalRooms });
+    const { error } = hostelSchema.validate({ name, totalRooms });
     if (error) {
         throw new ApiError(400, error.message);
     }
