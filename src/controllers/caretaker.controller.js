@@ -31,10 +31,10 @@ const createCaretaker = asyncHandler(async (req, res) => {
 
     const createdBy = req.user._id;
     const role = "caretaker";
-    await User.create({ fullName, email, password, role, hostelId, contactNumber, createdBy });
+    const caretaker = await User.create({ fullName, email, password, role, hostelId, contactNumber, createdBy });
 
-    const caretaker = await User.findById(caretaker._id).select("-password -refreshToken");
-    if (!caretaker) {
+    const updatedCaretaker = await User.findById(caretaker._id).select("-password -refreshToken");
+    if (!updatedCaretaker) {
         throw new ApiError(500, "Caretaker not created");
     }
 
