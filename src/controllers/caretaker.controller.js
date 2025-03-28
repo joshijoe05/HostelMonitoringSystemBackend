@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const User = require("../models/user.model");
+const Hostel = require("../models/hostel.model");
 const Joi = require("joi");
 
 
@@ -37,6 +38,7 @@ const createCaretaker = asyncHandler(async (req, res) => {
     if (!updatedCaretaker) {
         throw new ApiError(500, "Caretaker not created");
     }
+    await Hostel.findByIdAndUpdate(hostelId, { $push: { caretakerIds: caretaker._id } }, { new: true, runValidators: true });
 
 
     return res.status(201).json(new ApiResponse(201, "Caretaker created Successfully", { caretaker }));
@@ -94,6 +96,11 @@ const deleteCaretakerById = asyncHandler(async (req, res) => {
     const caretakerId = req.params.id;
 
     const deletedCaretaker = await User.findByIdAndDelete(caretakerId);
+    await Hostel.findByIdAndUpdate(
+        deletedCaretaker.hostelId,
+        { $pull: { caretakerIds: deletedCaretaker._id } },
+        { new: true }
+    );
 
     if (!deletedCaretaker) {
         throw new ApiError(404, "Caretaker not found");

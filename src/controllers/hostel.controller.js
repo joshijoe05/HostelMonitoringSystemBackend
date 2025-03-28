@@ -13,7 +13,7 @@ const createHostel = asyncHandler(async (req, res) => {
     const hostelSchema = Joi.object({
         name: Joi.string().min(3).max(100).required(),
         totalRooms: Joi.number().integer().min(1).required(),
-        // wings: Joi.array().items(Joi.string().min(1)).required(),
+
     });
 
     const { error } = hostelSchema.validate({ name, totalRooms });
@@ -31,14 +31,7 @@ const createHostel = asyncHandler(async (req, res) => {
 
 const getAllHostels = asyncHandler(async (req, res) => {
     const hostels = await Hostel.aggregate([
-        {
-            $lookup: {
-                from: "users",
-                localField: "caretakerIds",
-                foreignField: "_id",
-                as: "caretakers",
-            },
-        },
+
         {
             $lookup: {
                 from: "users",
@@ -48,14 +41,28 @@ const getAllHostels = asyncHandler(async (req, res) => {
             },
         },
         {
+            $lookup: {
+                from: "users",
+                localField: "caretakerIds",
+                foreignField: "_id",
+                as: "caretakers",
+            },
+        },
+        {
             $project: {
                 name: 1,
-                wings: 1,
                 totalRooms: 1,
-                waterTimings: 1,
                 createdAt: 1,
                 updatedAt: 1,
-                caretakers: "$caretakers.fullName",
+
+                caretakers: {
+                    $map: {
+                        input: "$caretakers",
+                        as: "caretaker",
+                        in: "$$caretaker.fullName"
+                    }
+                },
+
                 createdBy: { $arrayElemAt: ["$creator.fullName", 0] },
             },
         },
@@ -67,6 +74,8 @@ const getAllHostels = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, "Hostels fetched Successfully", { hostels }));
 });
+
+
 
 
 
