@@ -3,6 +3,8 @@ const ApiError = require("../utils/apiError");
 const ApiResponse = require("../utils/apiResponse");
 const Joi = require("joi");
 const Hostel = require("../models/hostel.model");
+const User = require("../models/user.model");
+const mongoose = require("mongoose");
 
 const createHostel = asyncHandler(async (req, res) => {
     const { name, totalRooms } = req.body;
@@ -123,9 +125,51 @@ const deleteHostelById = asyncHandler(async (req, res) => {
 });
 
 
+const getStudentsInHostel = asyncHandler(async (req, res) => {
+    let hostelId;
+    if (req.user.role === "caretaker") {
+        hostelId = req.user.hostelId;
+    } else if (req.user.role === "admin") {
+        hostelId = req.query.hostelId;
+        if (!hostelId) {
+            throw new ApiError(400, "Hostel ID is required");
+        }
+        hostelId = new mongoose.Types.ObjectId(hostelId);
+    }
+
+    const { page = 1, limit = 10, sortBy = "createdAt", order = "desc" } = req.query;
+    const filters = { hostelId: hostelId, role: "student" };
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+
+    const students = await User.find(filters)
+        .select("fullName email contactNumber")
+        .populate({
+            path: "hostelId",
+            select: "name",
+        })
+        .sort({ [sortBy]: order === "desc" ? -1 : 1 })
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+
+    const totalStudents = await User.countDocuments(filters);
+
+    return res.status(200).json(new ApiResponse(200, "Students fetched successfully", {
+        students,
+        meta: {
+            total: totalStudents,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(totalStudents / limitNumber),
+        },
+    }))
+});
+
+
 module.exports = {
     createHostel,
     getAllHostels,
     updateHostelById,
     deleteHostelById,
+    getStudentsInHostel,
 };
