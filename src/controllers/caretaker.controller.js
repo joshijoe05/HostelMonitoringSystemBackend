@@ -43,11 +43,23 @@ const createCaretaker = asyncHandler(async (req, res) => {
 });
 
 const getAllCaretakers = asyncHandler(async (req, res) => {
-    const caretakers = await User.find({ role: "caretaker" });
+    const caretakers = await User.find({ role: "caretaker" }).populate("hostelId", "name").populate("createdBy", "fullName");
     if (!caretakers) {
         throw new ApiError(404, "Caretakers not found");
     }
-    return res.status(200).json(new ApiResponse(200, "Caretakers fetched Successfully", { caretakers }));
+    const formattedCaretakers = caretakers.map(caretaker => ({
+        _id: caretaker._id,
+        fullName: caretaker.fullName,
+        email: caretaker.email,
+        contactNumber: caretaker.contactNumber,
+        role: caretaker.role,
+        createdBy: caretaker.createdBy ? caretaker.createdBy.fullName : null,
+        hostel: caretaker.hostelId ? caretaker.hostelId.name : null,
+        createdAt: caretaker.createdAt,
+        updatedAt: caretaker.updatedAt,
+    }));
+
+    return res.status(200).json(new ApiResponse(200, "Caretakers fetched Successfully", { caretakers: formattedCaretakers }));
 });
 
 
