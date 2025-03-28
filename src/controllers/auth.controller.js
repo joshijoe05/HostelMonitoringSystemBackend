@@ -230,4 +230,18 @@ const getAccessTokenFromRefreshToken = asyncHandler(async (req, res) => {
         );
 });
 
-module.exports = { registerUser, verifyUser, loginUser, logoutUser, changeAccountPassword, getAccessTokenFromRefreshToken };
+const getUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "User profile fetched successfully",
+            {
+                user
+            },
+        )
+    );
+});
+
+module.exports = { registerUser, verifyUser, loginUser, logoutUser, changeAccountPassword, getAccessTokenFromRefreshToken, getUserProfile };
