@@ -222,6 +222,11 @@ const getBusRoutesForStudents = asyncHandler(async (req, res) => {
 });
 
 
+const getAllCities = asyncHandler(async (req, res) => {
+    const cities = await BusRoute.distinct("to");
+    return res.status(200).json(new ApiResponse(200, "Bus routes fetched successfully", { cities }));
+});
+
 
 module.exports = {
     createBusForm,
@@ -229,5 +234,6 @@ module.exports = {
     getStatsOfForm,
     createBusRoute,
     getAllBusRoutes,
-    getBusRoutesForStudents
+    getBusRoutesForStudents,
+    getAllCities,
 }

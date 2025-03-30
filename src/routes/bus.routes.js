@@ -1,6 +1,7 @@
 const express = require("express");
 const busController = require("../controllers/bus.controller");
 const authorizeRoles = require("../middlewares/userRole.middleware");
+const verifyUser = require("../middlewares/auth.middleware");
 
 const router = express.Router();
 
@@ -11,6 +12,6 @@ router.route("/form/stats/:formId").get(authorizeRoles("admin"), busController.g
 router.route("/create").post(authorizeRoles("admin"), busController.createBusRoute);
 router.route("/").get(authorizeRoles("admin"), busController.getAllBusRoutes);
 router.route("/students").get(authorizeRoles("student"), busController.getBusRoutesForStudents);
-
+router.route("/cities").get(verifyUser, busController.getAllCities);
 
 module.exports = router;
