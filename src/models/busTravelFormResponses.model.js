@@ -4,6 +4,7 @@ const busTravelFormResponseSchema = new mongoose.Schema({
     formId: { type: mongoose.Schema.Types.ObjectId, ref: "BusTravelForm", required: true },
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     willTravelByBus: { type: Boolean, required: true },
+    relation: String,
     destinationCity: String
 });
 

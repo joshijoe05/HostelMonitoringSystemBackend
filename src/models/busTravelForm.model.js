@@ -5,6 +5,7 @@ const BusTravelFormSchema = new mongoose.Schema({
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     createdAt: { type: Date, default: Date.now },
     expiresAt: { type: Date, required: true },
+    cities: [{ type: String }],
     isActive: { type: Boolean, default: true },
 });
 
