@@ -60,6 +60,19 @@ const respondToForm = asyncHandler(async (req, res) => {
     const { willTravelByBus, destinationCity, relation } = req.body;
     const studentId = req.user._id;
 
+    const busForm = await BusTravelForm.findById(formId);
+    if (!busForm) {
+        throw new ApiError(404, "Bus Travel Form not found");
+    }
+
+    if (new Date(busForm.expiresAt) < new Date()) {
+        throw new ApiError(400, "This form has expired, responses are no longer accepted.");
+    }
+
+    if (!busForm.isActive) {
+        throw new ApiError(400, "This form is no longer active.");
+    }
+
     const responseValidation = Joi.object({
         willTravelByBus: Joi.boolean().required().messages({
             "boolean.base": "willTravelByBus must be true or false.",
