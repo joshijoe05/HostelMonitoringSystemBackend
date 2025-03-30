@@ -4,6 +4,7 @@ const ApiResponse = require("../utils/apiResponse");
 const BusTravelForm = require("../models/busTravelForm.model");
 const BusTravelFormResponse = require("../models/busTravelFormResponses.model");
 const Joi = require("joi");
+const BusRoute = require("../models/busRoute.model");
 
 
 const createBusForm = asyncHandler(async (req, res) => {
@@ -49,7 +50,7 @@ const createBusForm = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Bus Travel Form could not be created");
     }
 
-    // send notification
+
 
     return res.status(200).json(new ApiResponse(200, "Bus Travel Form created Successfully", busForm));
 });
@@ -126,8 +127,107 @@ const getStatsOfForm = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, "Bus Travel Form Responses fetched Successfully", { busForm, busFormResponses }));
 });
 
+
+const createBusRoute = asyncHandler(async (req, res) => {
+    const { name, from, to, busFare, seatsAvailable, busType, departureTime, hostels, date } = req.body;
+    const createdBy = req.user._id;
+
+    const routeValidationSchema = Joi.object({
+        name: Joi.string().trim().min(3).max(100).required(),
+        from: Joi.string().trim().min(3).max(100).required(),
+        to: Joi.string().trim().min(3).max(100).required(),
+        busFare: Joi.number().positive().required(),
+        seatsAvailable: Joi.number().integer().min(1).required(),
+        busType: Joi.string().valid("Express", "Super Luxury", "Ultra Deluxe", "Palle Velugu").required(),
+        departureTime: Joi.date().iso().required(),
+        hostels: Joi.array().items(Joi.string().trim().required()).min(1).required(),
+        date: Joi.date().iso().required()
+    });
+
+    const { error } = routeValidationSchema.validate({ name, from, to, busFare, seatsAvailable, busType, departureTime, hostels, date });
+    if (error) {
+        throw new ApiError(400, error.details[0].message);
+    }
+
+    const busRoute = await BusRoute.create({
+        createdBy,
+        name,
+        from,
+        to,
+        busFare,
+        seatsAvailable,
+        busType,
+        departureTime,
+        hostels,
+        date
+    });
+
+    if (!busRoute) {
+        throw new ApiError(500, "Bus route could not be created.");
+    }
+
+    return res.status(201).json(new ApiResponse(201, "Bus route created successfully", busRoute));
+});
+
+
+const getAllBusRoutes = asyncHandler(async (req, res) => {
+    const { busType, to, sortBy = "createdAt", order = "desc", page = 1, limit = 10 } = req.query;
+
+    const filters = {};
+
+    if (busType) filters.busType = busType;
+    if (to) filters.to = new RegExp(to, "i");
+    const pageNumber = parseInt(page, 10);
+    const limitNumber = parseInt(limit, 10);
+    const sortOption = { [sortBy]: order === "desc" ? -1 : 1 };
+
+    const totalRoutes = await BusRoute.countDocuments(filters);
+    const busRoutes = await BusRoute.find(filters)
+        .populate("createdBy", "fullName")
+        .populate("hostels", "name")
+        .sort(sortOption)
+        .skip((pageNumber - 1) * limitNumber)
+        .limit(limitNumber);
+
+    return res.status(200).json(new ApiResponse(200, "Bus routes fetched successfully", {
+        busRoutes,
+        meta: {
+            total: totalRoutes,
+            page: pageNumber,
+            limit: limitNumber,
+            totalPages: Math.ceil(totalRoutes / limitNumber),
+        },
+    }));
+});
+
+
+const getBusRoutesForStudents = asyncHandler(async (req, res) => {
+    const { to } = req.query;
+    const studentHostelId = req.user.hostelId;
+
+    const filters = {
+        hostels: { $in: studentHostelId },
+        seatsAvailable: { $gt: 0 }
+    };
+
+    if (to) {
+        filters.to = new RegExp(to, "i");
+    }
+
+    const busRoutes = await BusRoute.find(filters)
+        .populate("createdBy", "fullName email")
+        .populate("hostels", "name");
+
+    return res.status(200).json(new ApiResponse(200, "Bus routes fetched successfully", busRoutes));
+});
+
+
+
 module.exports = {
     createBusForm,
     respondToForm,
     getStatsOfForm,
+    createBusRoute,
+    getAllBusRoutes,
+    getBusRoutesForStudents
 }
