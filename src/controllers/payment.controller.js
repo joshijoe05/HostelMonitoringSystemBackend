@@ -2,7 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const ApiResponse = require("../utils/apiResponse");
 const ApiError = require("../utils/apiError");
 const Booking = require("../models/booking.model");
-const { initiatePhonePePayment } = require("../services/phonepe.service");
+const { initiatePhonePePayment, checkStatusApi } = require("../services/phonepe.service");
 const redis = require("../config/redis");
 const BusRoute = require("../models/busRoute.model");
 
@@ -48,7 +48,8 @@ const initiatePayment = asyncHandler(async (req, res) => {
             const paymentUrl = await initiatePhonePePayment(userId, transactionId, bus.busFare);
             return res.status(200).json(new ApiResponse(200, "Payment initiated", { paymentUrl }));
         } catch (error) {
-            await redis.incr(seatKey); // Restore seat count on failure
+            await redis.incr(seatKey);
+            await redis.del(lockKey);
             throw new ApiError(500, error.message || "Failed to initiate payment");
         }
     } else {
@@ -60,29 +61,37 @@ const initiatePayment = asyncHandler(async (req, res) => {
 
 
 
-const handlePhonePeWebhook = asyncHandler(async (req, res) => {
-    console.log(req.body);
-    const { transactionId, status } = req.body;
-
+const validatePayment = asyncHandler(async (req, res) => {
+    const transactionId = req.params.id;
     const booking = await Booking.findOne({ transactionId });
     if (!booking) {
         return res.status(400).json({ message: "Booking not found" });
     }
+    try {
+        const data = await checkStatusApi(transactionId);
+        if (data && data.code == "PAYMENT_SUCCESS") {
+            booking.status = "CONFIRMED";
+            await booking.save();
 
-    const seatKey = `bus:${booking.busId}:seats`;
-
-    if (status === "SUCCESS") {
-        booking.status = "CONFIRMED";
-        await booking.save();
-
-        await BusRoute.findByIdAndUpdate(booking.busId, { $inc: { seatsAvailable: -1 } });
-    } else {
-        await redis.incr(seatKey);
-        booking.status = "FAILED";
-        await booking.save();
+            await BusRoute.findByIdAndUpdate(booking.busId, { $inc: { seatsAvailable: -1 } });
+            return res.status(200).json(new ApiResponse(200, "Payment successful", data));
+        }
+        else if (data && data.code === "PAYMENT_PENDING") {
+            return res.status(202).json(new ApiResponse(200, "Payment pending"));
+        } else {
+            const seatKey = `bus:${booking.busId}:seats`;
+            await redis.incr(seatKey);
+            booking.status = "FAILED";
+            await booking.save();
+            return res.status(400).json(new ApiResponse(400, "Payment failed", response.data));
+        }
+    }
+    catch (error) {
+        throw new ApiError(500, error.message || "Failed to validate payment");
     }
 
-    return res.status(200).json(new ApiResponse(200, "Webhook processed"));
+
+
 });
 
-module.exports = { initiatePayment, handlePhonePeWebhook };
+module.exports = { initiatePayment, validatePayment };

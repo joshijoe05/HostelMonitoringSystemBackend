@@ -9,7 +9,7 @@ const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
 const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX;
 const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
-const CALLBACK_URL = process.env.BASE_URL + "/api/v1/payment/webhook";
+const CALLBACK_URL = process.env.BASE_URL + "/api/v1/payment/validate";
 
 const initiatePhonePePayment = async (userId, transactionId, amount) => {
     try {
@@ -18,7 +18,7 @@ const initiatePhonePePayment = async (userId, transactionId, amount) => {
             merchantTransactionId: transactionId,
             merchantUserId: userId,
             amount: amount * 100,
-            redirectUrl: CALLBACK_URL,
+            redirectUrl: `${CALLBACK_URL}/${transactionId}`,
             redirectMode: "REDIRECT",
             mobileNumber: "9999999999",
             paymentInstrument: {
@@ -26,15 +26,12 @@ const initiatePhonePePayment = async (userId, transactionId, amount) => {
             },
         };
 
-        // Base64 encode payload
         const base64EncodedPayload = Buffer.from(JSON.stringify(normalPayLoad), "utf8").toString("base64");
 
-        // Generate X-VERIFY checksum
         const stringToHash = base64EncodedPayload + "/pg/v1/pay" + PHONEPE_SALT_KEY;
         const sha256_val = sha256(stringToHash);
         const xVerifyChecksum = sha256_val + "###" + PHONEPE_SALT_INDEX;
 
-        // Make API request
         const response = await axios.post(
             `${PHONEPE_BASE_URL}/pg/v1/pay`,
             { request: base64EncodedPayload },
@@ -47,7 +44,6 @@ const initiatePhonePePayment = async (userId, transactionId, amount) => {
             }
         );
         // console.log(response.data);
-        // Extract and return intent URL
         if (response.data.success) {
 
             return response.data.data.instrumentResponse.redirectInfo.url;
@@ -60,10 +56,34 @@ const initiatePhonePePayment = async (userId, transactionId, amount) => {
     }
 };
 
+const checkStatusApi = async (merchantTransactionId) => {
+    try {
+        const statusUrl = `${PHONEPE_BASE_URL}/pg/v1/status/${PHONEPE_MERCHANT_ID}/${merchantTransactionId}`;
+
+        const stringToHash = `/pg/v1/status/${PHONEPE_MERCHANT_ID}/${merchantTransactionId}${PHONEPE_SALT_KEY}`;
+        const sha256_val = sha256(stringToHash);
+        const xVerifyChecksum = sha256_val + "###" + PHONEPE_SALT_INDEX;
+
+        const response = await axios.get(statusUrl, {
+            headers: {
+                "Content-Type": "application/json",
+                "X-VERIFY": xVerifyChecksum,
+                accept: "application/json",
+            },
+        });
+
+        console.log("PhonePe Status Response:", response.data);
+        return response.data;
+
+    } catch (error) {
+        console.error("PhonePe Payment Status Error:", error.response?.data || error.message);
+        throw new ApiError(500, "Failed to fetch payment status");
+    }
+};
 
 
 
 
 
 
-module.exports = { initiatePhonePePayment };
+module.exports = { initiatePhonePePayment, checkStatusApi };
