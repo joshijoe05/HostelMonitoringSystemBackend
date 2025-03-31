@@ -7,6 +7,7 @@ const hostelRouter = require("./routes/hostel.routes");
 const caretakerRouter = require("./routes/caretaker.routes");
 const complaintRouter = require("./routes/complaint.routes");
 const busRouter = require("./routes/bus.routes");
+const paymentRouter = require("./routes/payment.routes");
 
 const app = express();
 
@@ -49,5 +50,6 @@ app.use("/api/v1/hostel", hostelRouter);
 app.use("/api/v1/caretaker", caretakerRouter);
 app.use("/api/v1/complaints", complaintRouter);
 app.use("/api/v1/bus", busRouter);
+app.use("/api/v1/payment", paymentRouter);
 
 module.exports = { app };

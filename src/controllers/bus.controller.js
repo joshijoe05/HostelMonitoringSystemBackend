@@ -166,6 +166,8 @@ const createBusRoute = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Bus route could not be created.");
     }
 
+    // set bus seats in cache
+
     return res.status(201).json(new ApiResponse(201, "Bus route created successfully", busRoute));
 });
 
