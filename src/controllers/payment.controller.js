@@ -3,7 +3,7 @@ const ApiResponse = require("../utils/apiResponse");
 const ApiError = require("../utils/apiError");
 const Booking = require("../models/booking.model");
 const { initiatePhonePePayment, checkStatusApi } = require("../services/phonepe.service");
-const redis = require("../config/redis");
+const { client } = require("../config/redis");
 const BusRoute = require("../models/busRoute.model");
 
 
@@ -15,24 +15,24 @@ const initiatePayment = asyncHandler(async (req, res) => {
     if (!bus) throw new ApiError(404, "Bus not found");
 
     const seatKey = `bus:${busId}:seats`;
-    let availableSeats = await redis.get(seatKey);
+    let availableSeats = await client.get(seatKey);
 
     if (!availableSeats || availableSeats <= 0) {
         availableSeats = bus.seatsAvailable;
         console.log(availableSeats);
-        await redis.set(seatKey, availableSeats, "EX", 3600);
+        await client.set(seatKey, availableSeats, { EX: 3600 });
     }
 
     availableSeats = parseInt(availableSeats);
 
     const lockKey = `lock:bus:${busId}:seats:${availableSeats}`;
-    const lockAcquired = await redis.set(lockKey, userId, "NX", "EX", 300);
+    const lockAcquired = await client.set(lockKey, userId, { EX: 300, NX: true });
     if (!lockAcquired) {
         throw new ApiError(400, "Another transaction is in progress");
     }
 
     if (availableSeats > 0) {
-        await redis.decr(seatKey);
+        await client.decr(seatKey);
         const transactionId = `TXN_${Date.now()}`;
 
         const booking = new Booking({
@@ -48,12 +48,12 @@ const initiatePayment = asyncHandler(async (req, res) => {
             const paymentUrl = await initiatePhonePePayment(userId, transactionId, bus.busFare);
             return res.status(200).json(new ApiResponse(200, "Payment initiated", { paymentUrl }));
         } catch (error) {
-            await redis.incr(seatKey);
-            await redis.del(lockKey);
+            await client.incr(seatKey);
+            await client.del(lockKey);
             throw new ApiError(500, error.message || "Failed to initiate payment");
         }
     } else {
-        await redis.del(lockKey);
+        await client.del(lockKey);
         return res.status(400).json(new ApiResponse(400, "No seats available"));
     }
 });
@@ -80,7 +80,7 @@ const validatePayment = asyncHandler(async (req, res) => {
             return res.status(202).json(new ApiResponse(200, "Payment pending"));
         } else {
             const seatKey = `bus:${booking.busId}:seats`;
-            await redis.incr(seatKey);
+            await client.incr(seatKey);
             booking.status = "FAILED";
             await booking.save();
             return res.status(400).json(new ApiResponse(400, "Payment failed", response.data));

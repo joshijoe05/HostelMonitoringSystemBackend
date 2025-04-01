@@ -1,8 +1,6 @@
 const axios = require("axios");
-const crypto = require("crypto");
 const ApiError = require("../utils/apiError");
 require("dotenv").config();
-const Booking = require("../models/booking.model");
 const sha256 = require("sha256");
 
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
