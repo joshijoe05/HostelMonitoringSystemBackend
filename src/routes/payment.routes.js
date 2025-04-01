@@ -5,7 +5,7 @@ const paymentController = require("../controllers/payment.controller");
 const router = express.Router();
 
 router.post("/initiate-payment", verifyUser, paymentController.initiatePayment);
-router.get("/validate/:id", verifyUser, paymentController.validatePayment);
+router.post("/validate", verifyUser, paymentController.validatePayment);
 
 
 module.exports = router;

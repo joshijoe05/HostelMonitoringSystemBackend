@@ -7,16 +7,15 @@ const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
 const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
 const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX;
 const PHONEPE_BASE_URL = process.env.PHONEPE_BASE_URL;
-const CALLBACK_URL = process.env.BASE_URL + "/api/v1/payment/validate";
 
-const initiatePhonePePayment = async (userId, transactionId, amount) => {
+const initiatePhonePePayment = async (userId, transactionId, seatKey, amount) => {
     try {
         const normalPayLoad = {
             merchantId: PHONEPE_MERCHANT_ID,
             merchantTransactionId: transactionId,
             merchantUserId: userId,
             amount: amount * 100,
-            redirectUrl: `${CALLBACK_URL}/${transactionId}`,
+            redirectUrl: process.env.REDIRECT_URL,
             redirectMode: "REDIRECT",
             mobileNumber: "9999999999",
             paymentInstrument: {

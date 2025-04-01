@@ -11,6 +11,9 @@ const BookingSchema = new mongoose.Schema({
     },
     amount: { type: Number, required: true },
     paymentResponse: { type: Object },
+    passengerName: { type: String, required: true },
+    passengerEmail: { type: String, required: true },
+    passengerPhone: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
 });
 

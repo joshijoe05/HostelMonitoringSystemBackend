@@ -9,7 +9,7 @@ const BusRoute = require("../models/busRoute.model");
 
 
 const initiatePayment = asyncHandler(async (req, res) => {
-    const { busId } = req.body;
+    const { busId, passengerName, passengerEmail, passengerPhone } = req.body;
     const userId = req.user.id;
     const bus = await BusRoute.findById(busId);
     if (!bus) throw new ApiError(404, "Bus not found");
@@ -41,11 +41,14 @@ const initiatePayment = asyncHandler(async (req, res) => {
             transactionId,
             status: "PENDING",
             amount: bus.busFare,
+            passengerName,
+            passengerEmail,
+            passengerPhone
         });
         await booking.save();
 
         try {
-            const paymentUrl = await initiatePhonePePayment(userId, transactionId, bus.busFare);
+            const paymentUrl = await initiatePhonePePayment(userId, transactionId, lockKey, bus.busFare);
             return res.status(200).json(new ApiResponse(200, "Payment initiated", { paymentUrl }));
         } catch (error) {
             await client.incr(seatKey);
@@ -62,13 +65,15 @@ const initiatePayment = asyncHandler(async (req, res) => {
 
 
 const validatePayment = asyncHandler(async (req, res) => {
-    const transactionId = req.params.id;
+    const transactionId = req.body.id;
+    const lockKey = req.body.lock;
     const booking = await Booking.findOne({ transactionId });
     if (!booking) {
         return res.status(400).json({ message: "Booking not found" });
     }
     try {
         const data = await checkStatusApi(transactionId);
+        await client.del(lockKey);
         if (data && data.code == "PAYMENT_SUCCESS") {
             booking.status = "CONFIRMED";
             await booking.save();
