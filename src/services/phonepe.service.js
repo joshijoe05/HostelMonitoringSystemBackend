@@ -15,7 +15,7 @@ const initiatePhonePePayment = async (userId, transactionId, seatKey, amount) =>
             merchantTransactionId: transactionId,
             merchantUserId: userId,
             amount: amount * 100,
-            redirectUrl: process.env.REDIRECT_URL,
+            redirectUrl: `${process.env.REDIRECT_URL}/${transactionId}/${seatKey}`,
             redirectMode: "REDIRECT",
             mobileNumber: "9999999999",
             paymentInstrument: {
