@@ -79,16 +79,16 @@ const validatePayment = asyncHandler(async (req, res) => {
             await booking.save();
 
             await BusRoute.findByIdAndUpdate(booking.busId, { $inc: { seatsAvailable: -1 } });
-            return res.status(200).json(new ApiResponse(200, "Payment successful", data));
+            return res.status(200).json(new ApiResponse(200, "SUCCESS", data));
         }
         else if (data && data.code === "PAYMENT_PENDING") {
-            return res.status(202).json(new ApiResponse(200, "Payment pending"));
+            return res.status(202).json(new ApiResponse(200, "PENDING", data));
         } else {
             const seatKey = `bus:${booking.busId}:seats`;
             await client.incr(seatKey);
             booking.status = "FAILED";
             await booking.save();
-            return res.status(400).json(new ApiResponse(400, "Payment failed", response.data));
+            return res.status(400).json(new ApiResponse(400, "FAILED", data));
         }
     }
     catch (error) {
