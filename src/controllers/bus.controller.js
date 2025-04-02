@@ -71,6 +71,15 @@ const createBusForm = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, "Bus Travel Form created Successfully", busForm));
 });
 
+const getFormDetailsForStudent = asyncHandler(async (req, res) => {
+    const formId = req.params.formId;
+    const busForm = await BusTravelForm.findById(formId);
+    if (!busForm) {
+        throw new ApiError(404, "Bus Travel Form not found");
+    }
+
+});
+
 
 const respondToForm = asyncHandler(async (req, res) => {
     const formId = req.params.formId;
@@ -88,6 +97,10 @@ const respondToForm = asyncHandler(async (req, res) => {
 
     if (!busForm.isActive) {
         throw new ApiError(400, "This form is no longer active.");
+    }
+
+    if (!busForm.hostelId.some(id => id.toString() === req.user.hostelId.toString())) {
+        throw new ApiError(403, "You are not allowed to respond to this form as your hostel is not listed.");
     }
 
     const existingResponse = await BusTravelFormResponse.findOne({ formId, studentId });
