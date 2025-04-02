@@ -276,7 +276,7 @@ const getAllCities = asyncHandler(async (req, res) => {
 
 const getPastBookingsOfStudent = asyncHandler(async (req, res) => {
     const studentId = req.user._id;
-    const bookings = await Booking.find({ userId: studentId }).populate("busId", "name from to busType date");
+    const bookings = await Booking.find({ userId: studentId }).populate("busId", "name from to busType date").sort({ createdAt: -1 });
     return res.status(200).json(new ApiResponse(200, "Past bookings fetched successfully", { bookings }));
 });
 
