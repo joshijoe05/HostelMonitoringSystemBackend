@@ -14,5 +14,6 @@ router.route("/").get(authorizeRoles("admin"), busController.getAllBusRoutes);
 router.route("/students").get(authorizeRoles("student"), busController.getBusRoutesForStudents);
 router.route("/cities").get(verifyUser, busController.getAllCities);
 router.route("/form-details/:formId").get(authorizeRoles("student"), busController.getFormDetailsForStudent);
+router.route("/past-bookings").get(authorizeRoles("student"), busController.getPastBookingsOfStudent);
 
 module.exports = router;

@@ -7,6 +7,7 @@ const Joi = require("joi");
 const BusRoute = require("../models/busRoute.model");
 const User = require("../models/user.model");
 const Notification = require("../models/notification.model");
+const Booking = require("../models/booking.model");
 
 
 const createBusForm = asyncHandler(async (req, res) => {
@@ -273,6 +274,12 @@ const getAllCities = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, "Bus routes fetched successfully", { cities }));
 });
 
+const getPastBookingsOfStudent = asyncHandler(async (req, res) => {
+    const studentId = req.user._id;
+    const bookings = await Booking.find({ userId: studentId }).populate("busId", "name from to busType date");
+    return res.status(200).json(new ApiResponse(200, "Past bookings fetched successfully", { bookings }));
+});
+
 
 module.exports = {
     createBusForm,
@@ -283,4 +290,5 @@ module.exports = {
     getBusRoutesForStudents,
     getAllCities,
     getFormDetailsForStudent,
+    getPastBookingsOfStudent,
 }
