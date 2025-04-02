@@ -5,6 +5,7 @@ const Booking = require("../models/booking.model");
 const { initiatePhonePePayment, checkStatusApi } = require("../services/phonepe.service");
 const { client } = require("../config/redis");
 const BusRoute = require("../models/busRoute.model");
+const sendMail = require("../services/mailer.service");
 
 
 
@@ -62,12 +63,36 @@ const initiatePayment = asyncHandler(async (req, res) => {
 });
 
 
+const sendBusBookedMail = async (booking) => {
 
+    const emailSubject = "🎟️ Bus Booking Confirmed!";
+    const emailBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #2d89ef;">🚍 Your Bus Ticket is Confirmed!</h2>
+            <p>Dear <strong>${booking.passengerName}</strong>,</p>
+            <p>Your bus booking has been successfully confirmed. Below are your booking details:</p>
+            <hr>
+            <p><strong>🚌 Bus Name:</strong> ${booking.busId.name}</p>
+            <p><strong>🛏️ Bus Type:</strong> ${booking.busId.busType}</p>
+            <p><strong>📍 From:</strong> ${booking.busId.from}</p>
+            <p><strong>📍 To:</strong> ${booking.busId.to}</p>
+            <p><strong>📅 Travel Date:</strong> ${new Date(booking.busId.date).toDateString()}</p>
+            <p><strong>💰 Amount Paid:</strong> ₹${booking.amount}</p>
+            <p><strong>📞 Contact:</strong> ${booking.passengerPhone}</p>
+            <p><strong>📧 Email:</strong> ${booking.passengerEmail}</p>
+            <hr>
+            <p>Thank you for choosing our service. Have a safe journey! 🚀</p>
+        </div>
+    `;
+
+    await sendMail(booking.passengerEmail, emailSubject, emailBody);
+
+}
 
 const validatePayment = asyncHandler(async (req, res) => {
     const transactionId = req.body.id;
     const lockKey = req.body.lock;
-    const booking = await Booking.findOne({ transactionId });
+    const booking = await Booking.findOne({ transactionId }).populate("busId");
     if (!booking) {
         return res.status(400).json({ message: "Booking not found" });
     }
@@ -79,6 +104,7 @@ const validatePayment = asyncHandler(async (req, res) => {
             await booking.save();
 
             await BusRoute.findByIdAndUpdate(booking.busId, { $inc: { seatsAvailable: -1 } });
+            await sendBusBookedMail(booking);
             return res.status(200).json(new ApiResponse(200, "SUCCESS", data));
         }
         else if (data && data.code === "PAYMENT_PENDING") {
