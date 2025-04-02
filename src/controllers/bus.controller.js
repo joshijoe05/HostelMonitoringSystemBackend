@@ -77,10 +77,13 @@ const getFormDetailsForStudent = asyncHandler(async (req, res) => {
     if (!busForm) {
         throw new ApiError(404, "Bus Travel Form not found");
     }
+    const existingResponse = await BusTravelFormResponse.findOne({ formId, studentId });
+
     return res.status(200).json(new ApiResponse(200, "Form Details Fetched Successfully", {
         cities: busForm.cities,
-        expiresAt: busForm.expiresAt
-    }))
+        expiresAt: busForm.expiresAt,
+        hasResponded: !!existingResponse,  // true if response exists, false otherwise
+    }));
 });
 
 
