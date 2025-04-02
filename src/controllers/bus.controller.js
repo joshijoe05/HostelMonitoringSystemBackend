@@ -90,6 +90,11 @@ const respondToForm = asyncHandler(async (req, res) => {
         throw new ApiError(400, "This form is no longer active.");
     }
 
+    const existingResponse = await BusTravelFormResponse.findOne({ formId, studentId });
+    if (existingResponse) {
+        throw new ApiError(400, "You have already responded to this form.");
+    }
+
     const responseValidation = Joi.object({
         willTravelByBus: Joi.boolean().required().messages({
             "boolean.base": "willTravelByBus must be true or false.",
