@@ -73,6 +73,7 @@ const createBusForm = asyncHandler(async (req, res) => {
 
 const getFormDetailsForStudent = asyncHandler(async (req, res) => {
     const formId = req.params.formId;
+    const studentId = req.user._id;
     const busForm = await BusTravelForm.findById(formId);
     if (!busForm) {
         throw new ApiError(404, "Bus Travel Form not found");
