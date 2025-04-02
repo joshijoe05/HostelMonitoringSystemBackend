@@ -8,6 +8,7 @@ const caretakerRouter = require("./routes/caretaker.routes");
 const complaintRouter = require("./routes/complaint.routes");
 const busRouter = require("./routes/bus.routes");
 const paymentRouter = require("./routes/payment.routes");
+const notificationRouter = require("./routes/notificatoin.routes");
 
 const app = express();
 
@@ -51,5 +52,6 @@ app.use("/api/v1/caretaker", caretakerRouter);
 app.use("/api/v1/complaints", complaintRouter);
 app.use("/api/v1/bus", busRouter);
 app.use("/api/v1/payment", paymentRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 module.exports = { app };

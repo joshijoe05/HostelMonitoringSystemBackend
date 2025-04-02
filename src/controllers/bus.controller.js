@@ -5,6 +5,8 @@ const BusTravelForm = require("../models/busTravelForm.model");
 const BusTravelFormResponse = require("../models/busTravelFormResponses.model");
 const Joi = require("joi");
 const BusRoute = require("../models/busRoute.model");
+const User = require("../models/user.model");
+const Notification = require("../models/notification.model");
 
 
 const createBusForm = asyncHandler(async (req, res) => {
@@ -50,7 +52,21 @@ const createBusForm = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Bus Travel Form could not be created");
     }
 
+    const students = await User.find({ hostelId: { $in: hostelId }, role: "student" }).select("_id");
 
+    if (students.length > 0) {
+        const recipientIds = students.map(student => student._id);
+
+        const notification = new Notification({
+            recipients: recipientIds,
+            title: "New Bus Travel Form Available",
+            body: "A new bus travel form has been created for your hostel. Check it now!",
+            type: "busform",
+            data: { busFormId: busForm._id },
+        });
+
+        await notification.save();
+    }
 
     return res.status(200).json(new ApiResponse(200, "Bus Travel Form created Successfully", busForm));
 });
