@@ -117,28 +117,31 @@ const respondToForm = asyncHandler(async (req, res) => {
             "any.required": "willTravelByBus is required."
         }),
 
-        destinationCity: Joi.alternatives().conditional("willTravelByBus", {
-            is: true,
-            then: Joi.string().trim().min(2).max(50).required().messages({
-                "string.base": "Destination city must be a string.",
-                "string.min": "Destination city must be at least 2 characters long.",
-                "string.max": "Destination city must not exceed 50 characters.",
-                "any.required": "Destination city is required when traveling by bus."
+        destinationCity: Joi.alternatives([
+            Joi.string().trim().min(2).max(50),
+            Joi.allow(null)
+        ])
+            .when("willTravelByBus", {
+                is: true,
+                then: Joi.required().messages({
+                    "any.required": "Destination city is required when traveling by bus."
+                }),
+                otherwise: Joi.forbidden()
             }),
-            otherwise: Joi.forbidden()
-        }),
 
-        relation: Joi.alternatives().conditional("willTravelByBus", {
-            is: false,
-            then: Joi.string().trim().min(2).max(50).required().messages({
-                "string.base": "Relation must be a string.",
-                "string.min": "Relation must be at least 2 characters long.",
-                "string.max": "Relation must not exceed 50 characters.",
-                "any.required": "Relation is required when not traveling by bus."
-            }),
-            otherwise: Joi.forbidden()
-        })
+        relation: Joi.alternatives([
+            Joi.string().trim().min(2).max(50),
+            Joi.allow(null)
+        ])
+            .when("willTravelByBus", {
+                is: false,
+                then: Joi.required().messages({
+                    "any.required": "Relation is required when not traveling by bus."
+                }),
+                otherwise: Joi.forbidden()
+            })
     });
+
 
     const { error } = responseValidation.validate({ willTravelByBus, destinationCity, relation });
     if (error) {
