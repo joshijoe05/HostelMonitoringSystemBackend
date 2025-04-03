@@ -8,6 +8,7 @@ const BusRoute = require("../models/busRoute.model");
 const User = require("../models/user.model");
 const Notification = require("../models/notification.model");
 const Booking = require("../models/booking.model");
+const { notificationToTopic } = require("../services/notification.service");
 
 
 const createBusForm = asyncHandler(async (req, res) => {
@@ -52,7 +53,16 @@ const createBusForm = asyncHandler(async (req, res) => {
     if (!busForm) {
         throw new ApiError(500, "Bus Travel Form could not be created");
     }
-
+    const expiresAtFormatted = new Date(busForm.expiresAt).toLocaleString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
+    for (var topic of hostelId) {
+        await notificationToTopic(topic, "New Bus Travel Form Available", `A new bus travel form has been created for your hostel. Check it now!, Expires on ${expiresAtFormatted}`);
+    }
     const students = await User.find({ hostelId: { $in: hostelId }, role: "student" }).select("_id");
 
     if (students.length > 0) {
@@ -61,7 +71,7 @@ const createBusForm = asyncHandler(async (req, res) => {
         const notification = new Notification({
             recipients: recipientIds,
             title: "New Bus Travel Form Available",
-            body: "A new bus travel form has been created for your hostel. Check it now!",
+            body: `A new bus travel form has been created for your hostel. Check it now!, Expires on ${expiresAtFormatted}`,
             type: "busform",
             data: { busFormId: busForm._id },
         });
