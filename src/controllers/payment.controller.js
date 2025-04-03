@@ -90,8 +90,13 @@ const sendBusBookedMail = async (booking) => {
 }
 
 const validatePayment = asyncHandler(async (req, res) => {
-    const transactionId = req.body.id;
-    const lockKey = req.body.lock;
+    let transactionId = req.body.id;
+    // const lockKey = req.body.lock;
+    if (req.body.response != null) {
+        const decodedResponse = Buffer.from(req.body.response, "base64").toString("utf-8");
+        const paymentData = JSON.parse(decodedResponse);
+        transactionId = paymentData.data.merchantTransactionId;
+    }
 
     const existingStatus = await client.get(`payment:${transactionId}`);
     if (existingStatus === "CONFIRMED" || existingStatus === "FAILED") {
@@ -104,7 +109,7 @@ const validatePayment = asyncHandler(async (req, res) => {
     }
     try {
         const data = await checkStatusApi(transactionId);
-        await client.del(lockKey);
+        // await client.del(lockKey);
         if (data && data.code == "PAYMENT_SUCCESS") {
             booking.status = "CONFIRMED";
             await booking.save();
