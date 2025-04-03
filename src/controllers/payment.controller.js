@@ -92,6 +92,12 @@ const sendBusBookedMail = async (booking) => {
 const validatePayment = asyncHandler(async (req, res) => {
     const transactionId = req.body.id;
     const lockKey = req.body.lock;
+
+    const existingStatus = await client.get(`payment:${transactionId}`);
+    if (existingStatus === "CONFIRMED" || existingStatus === "FAILED") {
+        return res.status(200).json(new ApiResponse(200, existingStatus === "CONFIRMED" ? "SUCCESS" : "FAILED"));
+    }
+
     const booking = await Booking.findOne({ transactionId }).populate("busId");
     if (!booking) {
         return res.status(400).json({ message: "Booking not found" });
@@ -104,6 +110,7 @@ const validatePayment = asyncHandler(async (req, res) => {
             await booking.save();
 
             await BusRoute.findByIdAndUpdate(booking.busId, { $inc: { seatsAvailable: -1 } });
+            await client.set(`payment:${transactionId}`, "CONFIRMED", { EX: 600 });
             await sendBusBookedMail(booking);
             return res.status(200).json(new ApiResponse(200, "SUCCESS", data));
         }
@@ -114,6 +121,7 @@ const validatePayment = asyncHandler(async (req, res) => {
             await client.incr(seatKey);
             booking.status = "FAILED";
             await booking.save();
+            await client.set(`payment:${transactionId}`, "FAILED", { EX: 600 });
             return res.status(400).json(new ApiResponse(400, "FAILED", data));
         }
     }

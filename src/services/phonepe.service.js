@@ -21,6 +21,7 @@ const initiatePhonePePayment = async (userId, transactionId, seatKey, amount) =>
             paymentInstrument: {
                 type: "PAY_PAGE",
             },
+            callbackUrl: `${process.env.BASE_URL}/api/v1/payment/validate`,
         };
 
         const base64EncodedPayload = Buffer.from(JSON.stringify(normalPayLoad), "utf8").toString("base64");
