@@ -174,13 +174,47 @@ const respondToForm = asyncHandler(async (req, res) => {
 const getStatsOfForm = asyncHandler(async (req, res) => {
     const formId = req.params.formId;
     const busForm = await BusTravelForm.findById(formId);
+
     if (!busForm) {
         throw new ApiError(404, "Bus Travel Form not found");
     }
 
-    const busFormResponses = await BusTravelFormResponse.find({ formId });
-    return res.status(200).json(new ApiResponse(200, "Bus Travel Form Responses fetched Successfully", { busForm, busFormResponses }));
+    const responses = await BusTravelFormResponse.find({ formId });
+
+    const totalResponses = responses.length;
+    let busYesCount = 0;
+    let busNoCount = 0;
+    const cityCount = {};
+
+    responses.forEach(response => {
+        console.log(response);
+        if (response.willTravelByBus === true) {
+            busYesCount++;
+            const city = response.destinationCity;
+            if (city) {
+                cityCount[city] = (cityCount[city] || 0) + 1;
+            }
+        } else {
+            busNoCount++;
+        }
+    });
+
+    return res.status(200).json(new ApiResponse(200, "Bus Travel Form Stats fetched successfully", {
+        form: busForm,
+        stats: {
+            totalResponses,
+            busYesCount,
+            busNoCount,
+            cityCount,
+        },
+    }));
 });
+
+const getBusForms = asyncHandler(async (req, res) => {
+    const busForms = await BusTravelForm.find();
+    return res.status(200).json(new ApiResponse(200, "Bus Travel Forms fetched successfully", busForms));
+});
+
 
 
 const createBusRoute = asyncHandler(async (req, res) => {
@@ -290,15 +324,44 @@ const getPastBookingsOfStudent = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, "Past bookings fetched successfully", { bookings }));
 });
 
+const getBookingsOfBusRoute = asyncHandler(async (req, res) => {
+    const busId = req.params.id;
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalBookings = await Booking.countDocuments({ busId });
+
+    const bookings = await Booking.find({ busId })
+        .populate("userId", "fullName email")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    return res.status(200).json(new ApiResponse(200, "Bookings fetched successfully", {
+        bookings,
+        meta: {
+            total: totalBookings,
+            page: page,
+            limit: limit,
+            totalPages: Math.ceil(totalBookings / limit),
+        },
+    }));
+});
+
+
 
 module.exports = {
     createBusForm,
     respondToForm,
     getStatsOfForm,
+    getBusForms,
     createBusRoute,
     getAllBusRoutes,
     getBusRoutesForStudents,
     getAllCities,
     getFormDetailsForStudent,
     getPastBookingsOfStudent,
+    getBookingsOfBusRoute,
 }
