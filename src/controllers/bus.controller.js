@@ -211,9 +211,30 @@ const getStatsOfForm = asyncHandler(async (req, res) => {
 });
 
 const getBusForms = asyncHandler(async (req, res) => {
-    const busForms = await BusTravelForm.find();
-    return res.status(200).json(new ApiResponse(200, "Bus Travel Forms fetched successfully", busForms));
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalForms = await BusTravelForm.countDocuments();
+
+    const busForms = await BusTravelForm.find()
+        .populate("createdBy", "fullName email")
+        .populate("hostelId", "name")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    return res.status(200).json(new ApiResponse(200, "Bus Travel Forms fetched successfully", {
+        busForms,
+        meta: {
+            total: totalForms,
+            page,
+            limit,
+            totalPages: Math.ceil(totalForms / limit),
+        },
+    }));
 });
+
 
 
 
